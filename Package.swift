@@ -32,7 +32,7 @@ import PackageDescription
 func generateDependencies() -> [Package.Dependency] {
     if Context.environment["SWIFTCI_USE_LOCAL_DEPS"] == nil {
         return [
-            .package(url: "https://github.com/apple/swift-nio.git", from: "2.80.0")
+            .package(path: "../swift-nio")
         ]
     } else {
         return [
@@ -80,6 +80,10 @@ let package = Package(
         .target(
             name: "CNIOBoringSSL",
             cSettings: [
+                // Match embedded BoringSSL's upstream warning policy. Xcode adds
+                // this conversion diagnostic beyond that policy; keep the
+                // exception on the unmodified crypto target only.
+                .unsafeFlags(["-Wno-shorten-64-to-32"]),
                 .define("_GNU_SOURCE"),
                 .define("_POSIX_C_SOURCE", to: "200112L"),
                 .define("_DARWIN_C_SOURCE"),
@@ -106,7 +110,7 @@ let package = Package(
             ],
             exclude: includePrivacyManifest ? [] : ["PrivacyInfo.xcprivacy"],
             resources: includePrivacyManifest ? [.copy("PrivacyInfo.xcprivacy")] : [],
-            swiftSettings: strictConcurrencySettings
+            swiftSettings: strictConcurrencySettings + [.enableExperimentalFeature("CheckImplementationOnly")]
         ),
         .executableTarget(
             name: "NIOTLSServer",
